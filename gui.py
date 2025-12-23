@@ -2,9 +2,9 @@ import logging
 import queue
 import threading
 from pathlib import Path
+from typing import Optional
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
-from typing import Optional
 
 from converter import expand_inputs, process_batch
 
@@ -297,32 +297,45 @@ class ConverterGUI:
 
     def _drain_progress(self) -> None:
         """Process progress updates from the worker thread."""
-        while not self.progress_queue.empty():
-            item_type, item_data = self.progress_queue.get()
-            
-            if item_type == "done":
-                self.progress_var.set(self.progress_total)
-                self.status_var.set("✅ Conversión terminada")
-                self.is_converting = False
-                self.start_button.configure(state="normal")
-                self.log_message(f"\n{'=' * 60}")
-                self.log_message("✅ Proceso de conversión completado")
-                self.log_message(f"{'=' * 60}\n")
-                self._show_summary()
-                return
+        try:
+            while not self.progress_queue.empty():
+                item = self.progress_queue.get_nowait()
                 
-            elif item_type == "error":
-                self.status_var.set("❌ Error en la conversión")
-                self.is_converting = False
-                self.start_button.configure(state="normal")
-                self.log_message(f"❌ Error crítico: {item_data}")
-                messagebox.showerror("Error", f"Error durante la conversión:\n{item_data}")
-                return
-                
-            elif item_type == "progress":
-                done = item_data
-                self.progress_var.set(done)
-                self.status_var.set(f"🔄 Procesando ({done}/{self.progress_total})")
+                # Handle tuple format (new implementation)
+                if isinstance(item, tuple) and len(item) == 2:
+                    item_type, item_data = item
+                    
+                    if item_type == "done":
+                        self.progress_var.set(self.progress_total)
+                        self.status_var.set("✅ Conversión terminada")
+                        self.is_converting = False
+                        self.start_button.configure(state="normal")
+                        self.log_message(f"\n{'=' * 60}")
+                        self.log_message("✅ Proceso de conversión completado")
+                        self.log_message(f"{'=' * 60}\n")
+                        self._show_summary()
+                        return
+                        
+                    elif item_type == "error":
+                        self.status_var.set("❌ Error en la conversión")
+                        self.is_converting = False
+                        self.start_button.configure(state="normal")
+                        self.log_message(f"❌ Error crítico: {item_data}")
+                        messagebox.showerror("Error", f"Error durante la conversión:\n{item_data}")
+                        return
+                        
+                    elif item_type == "progress":
+                        done = item_data
+                        self.progress_var.set(done)
+                        self.status_var.set(f"🔄 Procesando ({done}/{self.progress_total})")
+                else:
+                    # Log unexpected item format
+                    logger.warning(f"Formato inesperado en cola de progreso: {item}")
+                    
+        except queue.Empty:
+            pass  # Queue is empty, continue
+        except Exception as e:
+            logger.error(f"Error procesando progreso: {e}")
                 
         self.root.after(200, self._drain_progress)
 

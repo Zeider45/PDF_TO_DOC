@@ -134,6 +134,7 @@ def convert_single(pdf_path: Path, output_dir: Path, overwrite: bool) -> Result:
         Tuple of (status, pdf_path, error_message)
         status can be: "ok", "skipped", or "error"
     """
+    converter = None
     try:
         # Create output directory if it doesn't exist
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -155,10 +156,10 @@ def convert_single(pdf_path: Path, output_dir: Path, overwrite: bool) -> Result:
             logger.error(f"Error en {pdf_path.name}: {error_msg}")
             return "error", pdf_path, error_msg
         
-        # Convert using context manager to ensure proper cleanup
+        # Convert with proper cleanup using try/finally
         logger.debug(f"Convirtiendo {pdf_path.name}...")
-        with Converter(str(pdf_path)) as converter:
-            converter.convert(str(docx_path), start=0, end=None)
+        converter = Converter(str(pdf_path))
+        converter.convert(str(docx_path), start=0, end=None)
         
         logger.info(f"✓ Convertido: {pdf_path.name}")
         return "ok", pdf_path, ""
@@ -177,6 +178,14 @@ def convert_single(pdf_path: Path, output_dir: Path, overwrite: bool) -> Result:
         error_msg = f"{type(exc).__name__}: {str(exc)}"
         logger.error(f"Error en {pdf_path.name}: {error_msg}")
         return "error", pdf_path, error_msg
+        
+    finally:
+        # Ensure converter is always closed to prevent hanging
+        if converter is not None:
+            try:
+                converter.close()
+            except Exception as e:
+                logger.warning(f"Error al cerrar converter para {pdf_path.name}: {e}")
 
 
 def process_batch(
@@ -249,12 +258,15 @@ def process_batch(
         start_times = {fut: time.time() for fut in future_map}
         pending = set(future_map.keys())
         processed = 0
+        
+        # Calculate check interval: min of 5 seconds or half the timeout
+        check_interval = min(timeout_secs / 2, 5.0) if timeout_secs else 5.0
 
         with tqdm(total=total, desc="Convirtiendo", unit="pdf") as pbar:
             while pending:
                 done, still_pending = concurrent.futures.wait(
                     pending,
-                    timeout=min(timeout_secs / 2, 5),  # Check every 5s or half the timeout
+                    timeout=check_interval,
                     return_when=concurrent.futures.FIRST_COMPLETED,
                 )
 
