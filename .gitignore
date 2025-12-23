@@ -43,6 +43,7 @@ test_pdfs/
 test_output/
 input_pdf/
 output_docx/
+test_converter.py
 
 # OS
 .DS_Store
