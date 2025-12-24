@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_all, copy_metadata
+from PyInstaller.utils.hooks import collect_all, copy_metadata, collect_submodules
 
 pdf2docx_datas, pdf2docx_binaries, pdf2docx_hiddenimports = collect_all("pdf2docx")
 try:
@@ -7,12 +7,32 @@ try:
 except Exception:
     pdf2docx_meta = []
 
+# Explicitly collect all pdf2docx submodules to ensure they are included
+pdf2docx_submodules = collect_submodules("pdf2docx")
+
+# Collect PyMuPDF and its dependencies
+pymupdf_datas, pymupdf_binaries, pymupdf_hiddenimports = collect_all("fitz")
+
 a = Analysis(
     ['gui.py'],
     pathex=['.'],
-    binaries=pdf2docx_binaries,
-    datas=pdf2docx_datas + pdf2docx_meta,
-    hiddenimports=pdf2docx_hiddenimports + ['pdf2docx'],
+    binaries=pdf2docx_binaries + pymupdf_binaries,
+    datas=pdf2docx_datas + pdf2docx_meta + pymupdf_datas,
+    hiddenimports=pdf2docx_hiddenimports + pdf2docx_submodules + pymupdf_hiddenimports + [
+        'pdf2docx',
+        'pdf2docx.converter',
+        'pdf2docx.common',
+        'pdf2docx.common.share',
+        'pdf2docx.page',
+        'pdf2docx.text',
+        'pdf2docx.layout',
+        'pdf2docx.shape',
+        'pdf2docx.image',
+        'pdf2docx.table',
+        'pdf2docx.font',
+        'fitz',
+        'pymupdf',
+    ],
     hookspath=['.'],
     hooksconfig={},
     runtime_hooks=[],

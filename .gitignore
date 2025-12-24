@@ -34,9 +34,8 @@ env/
 *.swo
 *~
 
-# PyInstaller
+# PyInstaller - keep .spec files but ignore build artifacts
 *.manifest
-*.spec
 
 # Test files
 test_pdfs/
