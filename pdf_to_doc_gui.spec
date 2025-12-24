@@ -20,7 +20,8 @@ a = Analysis(
     pathex=['.'],
     binaries=pdf2docx_binaries + pymupdf_binaries,
     datas=pdf2docx_datas + pdf2docx_meta + pymupdf_datas,
-    # Combine all hidden imports - collect_submodules gets all submodules automatically
+    # Combine all hidden imports: pdf2docx base imports + all submodules + PyMuPDF imports
+    # collect_submodules returns a list of all pdf2docx submodule names
     hiddenimports=pdf2docx_hiddenimports + pdf2docx_submodules + pymupdf_hiddenimports,
     hookspath=['.'],
     hooksconfig={},
