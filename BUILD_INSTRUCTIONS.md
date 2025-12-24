@@ -4,9 +4,10 @@ Este documento proporciona instrucciones para construir el ejecutable de la apli
 
 ## Requisitos Previos
 
-1. **Python 3.9 o superior** instalado
-2. **PyInstaller** instalado
-3. Todas las dependencias del proyecto instaladas
+1. **Python 3.9 o superior** instalado (probado con Python 3.9, 3.10, 3.11 y 3.12)
+2. **PyInstaller 6.0+** (recomendado 6.17.0 o superior)
+3. **pdf2docx 0.5.8+** (incluido en requirements.txt)
+4. Todas las dependencias del proyecto instaladas
 
 ## Pasos para Construir el Ejecutable
 
